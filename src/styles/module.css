@@ -1,0 +1,126 @@
+/* src/styles/module.css - shared styles for all CRUD modules */
+.module-page {
+  padding: 32px;
+  max-width: 1300px;
+}
+
+/* ─── Page header ─── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Add button */
+.add-btn {
+  height: 44px !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #4f8ef7, #2563eb) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(79,142,247,0.3) !important;
+  transition: all 0.2s !important;
+}
+
+.add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79,142,247,0.4) !important;
+}
+
+/* ─── Table toolbar ─── */
+.table-toolbar {
+  margin-bottom: 16px;
+}
+
+.search-input {
+  max-width: 320px;
+  height: 40px;
+  border-radius: 10px !important;
+}
+
+/* ─── Table card ─── */
+.table-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+.table-card .ant-table-thead > tr > th {
+  background: #f8fafc !important;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.table-card .ant-table-tbody > tr:hover > td {
+  background: #f0f7ff !important;
+}
+
+/* ─── Action buttons ─── */
+.action-btn {
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  transition: all 0.15s !important;
+}
+
+.action-btn.edit:hover {
+  background: rgba(79,142,247,0.1) !important;
+  color: #4f8ef7 !important;
+}
+
+.action-btn.delete:hover {
+  background: rgba(255,77,79,0.08) !important;
+}
+
+/* ─── Patient name ─── */
+.patient-name {
+  font-weight: 500;
+}
+
+/* ─── Modal form ─── */
+.modal-form {
+  margin-top: 8px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .ant-form-item {
+  flex: 1;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+
+@media (max-width: 768px) {
+  .module-page { padding: 16px; }
+  .form-row { flex-direction: column; gap: 0; }
+}
