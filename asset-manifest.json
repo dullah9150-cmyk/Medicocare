@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/Medicocare/static/css/main.da3c1052.css",
+    "main.js": "/Medicocare/static/js/main.93d9e67d.js",
+    "static/js/488.a01a3636.chunk.js": "/Medicocare/static/js/488.a01a3636.chunk.js",
+    "index.html": "/Medicocare/index.html",
+    "main.da3c1052.css.map": "/Medicocare/static/css/main.da3c1052.css.map",
+    "main.93d9e67d.js.map": "/Medicocare/static/js/main.93d9e67d.js.map",
+    "488.a01a3636.chunk.js.map": "/Medicocare/static/js/488.a01a3636.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.da3c1052.css",
+    "static/js/main.93d9e67d.js"
+  ]
+}
