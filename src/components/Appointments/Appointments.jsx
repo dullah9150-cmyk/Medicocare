@@ -1,7 +1,7 @@
 // src/components/Appointments/Appointments.jsx
 // Appointment scheduling linked to patients, stored in Firestore "appointments"
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   collection,
   addDoc,
@@ -57,6 +57,15 @@ const Appointments = () => {
   const [search, setSearch] = useState("");
   const [form] = Form.useForm();
 
+  // Refs for keyboard navigation
+  const patientSelectRef = useRef(null);
+  const datePickerRef = useRef(null);
+  const timePickerRef = useRef(null);
+  const doctorInputRef = useRef(null);
+  const statusSelectRef = useRef(null);
+  const notesTextAreaRef = useRef(null);
+  const submitButtonRef = useRef(null);
+
   useEffect(() => {
     const subs = [
       onSnapshot(collection(db, "appointments"), (s) => {
@@ -75,6 +84,13 @@ const Appointments = () => {
     form.resetFields();
     form.setFieldsValue({ status: "Scheduled" });
     setModalOpen(true);
+    
+    // Focus on first field after modal opens
+    setTimeout(() => {
+      if (patientSelectRef.current) {
+        patientSelectRef.current.focus();
+      }
+    }, 100);
   };
 
   const openEdit = (appt) => {
@@ -85,6 +101,13 @@ const Appointments = () => {
       time: appt.time ? dayjs(appt.time, "HH:mm") : null,
     });
     setModalOpen(true);
+    
+    // Focus on first field after modal opens
+    setTimeout(() => {
+      if (patientSelectRef.current) {
+        patientSelectRef.current.focus();
+      }
+    }, 100);
   };
 
   const handleSave = async (values) => {
@@ -134,6 +157,27 @@ const Appointments = () => {
     getPatientName(a.patientId).toLowerCase().includes(search.toLowerCase()) ||
     a.doctorName?.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Keyboard navigation handler
+  const handleKeyDown = (e, nextRef) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (nextRef && nextRef.current) {
+        if (nextRef.current.focus) {
+          nextRef.current.focus();
+        } else if (nextRef.current.querySelector('input')) {
+          nextRef.current.querySelector('input').focus();
+        } else if (nextRef.current.querySelector('.ant-select-selector')) {
+          // For Select components, focus on the selector
+          const selector = nextRef.current.querySelector('.ant-select-selector');
+          if (selector) {
+            selector.click();
+            selector.focus();
+          }
+        }
+      }
+    }
+  };
 
   const columns = [
     {
@@ -198,7 +242,14 @@ const Appointments = () => {
       </div>
 
       <div className="table-card">
-        <Table columns={columns} dataSource={filtered} rowKey="id" loading={loading} pagination={{ pageSize: 10 }} scroll={{ x: 800 }} />
+        <Table 
+          columns={columns} 
+          dataSource={filtered} 
+          rowKey="id" 
+          loading={loading} 
+          pagination={{ pageSize: 10 }} 
+          scroll={{ x: 800 }} 
+        />
       </div>
 
       <Modal
@@ -209,9 +260,25 @@ const Appointments = () => {
         width={560}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={handleSave} className="modal-form">
-          <Form.Item label="Patient" name="patientId" rules={[{ required: true, message: "Select a patient" }]}>
-            <Select placeholder="Choose patient" showSearch optionFilterProp="children">
+        <Form 
+          form={form} 
+          layout="vertical" 
+          onFinish={handleSave} 
+          className="modal-form"
+          autoComplete="off"
+        >
+          <Form.Item 
+            label="Patient" 
+            name="patientId" 
+            rules={[{ required: true, message: "Select a patient" }]}
+          >
+            <Select
+              ref={patientSelectRef}
+              placeholder="Choose patient" 
+              showSearch 
+              optionFilterProp="children"
+              onKeyDown={(e) => handleKeyDown(e, datePickerRef)}
+            >
               {patients.map((p) => (
                 <Option key={p.id} value={p.id}>{p.name} — {p.phone}</Option>
               ))}
@@ -219,20 +286,52 @@ const Appointments = () => {
           </Form.Item>
 
           <div className="form-row">
-            <Form.Item label="Date" name="date" rules={[{ required: true, message: "Required" }]} style={{ flex: 1 }}>
-              <DatePicker style={{ width: "100%" }} />
+            <Form.Item 
+              label="Date" 
+              name="date" 
+              rules={[{ required: true, message: "Required" }]} 
+              style={{ flex: 1 }}
+            >
+              <DatePicker 
+                ref={datePickerRef}
+                style={{ width: "100%" }} 
+                onKeyDown={(e) => handleKeyDown(e, timePickerRef)}
+              />
             </Form.Item>
-            <Form.Item label="Time" name="time" rules={[{ required: true, message: "Required" }]} style={{ flex: 1 }}>
-              <TimePicker style={{ width: "100%" }} format="HH:mm" minuteStep={15} />
+            <Form.Item 
+              label="Time" 
+              name="time" 
+              rules={[{ required: true, message: "Required" }]} 
+              style={{ flex: 1 }}
+            >
+              <TimePicker 
+                ref={timePickerRef}
+                style={{ width: "100%" }} 
+                format="HH:mm" 
+                minuteStep={15}
+                onKeyDown={(e) => handleKeyDown(e, doctorInputRef)}
+              />
             </Form.Item>
           </div>
 
-          <Form.Item label="Doctor Name" name="doctorName" rules={[{ required: true, message: "Required" }]}>
-            <Input placeholder="Dr. John Smith" />
+          <Form.Item 
+            label="Doctor Name" 
+            name="doctorName" 
+            rules={[{ required: true, message: "Required" }]}
+          >
+            <Input 
+              ref={doctorInputRef}
+              placeholder="Dr. John Smith" 
+              onKeyDown={(e) => handleKeyDown(e, statusSelectRef)}
+            />
           </Form.Item>
 
           <Form.Item label="Status" name="status">
-            <Select>
+            <Select
+              ref={statusSelectRef}
+              placeholder="Select status"
+              onKeyDown={(e) => handleKeyDown(e, notesTextAreaRef)}
+            >
               <Option value="Scheduled">Scheduled</Option>
               <Option value="Completed">Completed</Option>
               <Option value="Cancelled">Cancelled</Option>
@@ -241,12 +340,31 @@ const Appointments = () => {
           </Form.Item>
 
           <Form.Item label="Notes" name="notes">
-            <TextArea rows={3} placeholder="Additional notes or instructions..." />
+            <TextArea 
+              ref={notesTextAreaRef}
+              rows={3} 
+              placeholder="Additional notes or instructions... (Shift+Enter for new line)"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  // Regular Enter - submit the form
+                  e.preventDefault();
+                  form.submit();
+                }
+                // Shift+Enter will create a new line (default behavior)
+              }}
+            />
           </Form.Item>
 
           <div className="form-actions">
-            <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={saving}>
+            <Button onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              ref={submitButtonRef}
+              type="primary" 
+              htmlType="submit" 
+              loading={saving}
+            >
               {editing ? "Update Appointment" : "Schedule"}
             </Button>
           </div>

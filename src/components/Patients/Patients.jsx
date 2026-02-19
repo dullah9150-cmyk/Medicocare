@@ -1,7 +1,7 @@
 // src/components/Patients/Patients.jsx
 // Full CRUD for patients stored in Firestore "patients" collection
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   collection,
   addDoc,
@@ -50,6 +50,15 @@ const Patients = () => {
   const [search, setSearch] = useState("");
   const [form] = Form.useForm();
 
+  // Refs for keyboard navigation
+  const nameInputRef = useRef(null);
+  const ageInputRef = useRef(null);
+  const genderSelectRef = useRef(null);
+  const phoneInputRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const medicalHistoryRef = useRef(null);
+  const submitButtonRef = useRef(null);
+
   // Real-time subscription
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "patients"), (snap) => {
@@ -63,12 +72,26 @@ const Patients = () => {
     setEditing(null);
     form.resetFields();
     setModalOpen(true);
+    
+    // Focus on first field after modal opens
+    setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      }
+    }, 100);
   };
 
   const openEdit = (patient) => {
     setEditing(patient);
     form.setFieldsValue(patient);
     setModalOpen(true);
+    
+    // Focus on first field after modal opens
+    setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      }
+    }, 100);
   };
 
   const handleSave = async (values) => {
@@ -127,6 +150,27 @@ const Patients = () => {
       p.email?.toLowerCase().includes(search.toLowerCase()) ||
       p.phone?.includes(search)
   );
+
+  // Keyboard navigation handler
+  const handleKeyDown = (e, nextRef) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (nextRef && nextRef.current) {
+        if (nextRef.current.focus) {
+          nextRef.current.focus();
+        } else if (nextRef.current.querySelector('input, textarea, .ant-select-selector')) {
+          // For Select components, focus on the selector
+          const selector = nextRef.current.querySelector('.ant-select-selector');
+          if (selector) {
+            selector.click();
+            selector.focus();
+          } else {
+            nextRef.current.querySelector('input, textarea')?.focus();
+          }
+        }
+      }
+    }
+  };
 
   const columns = [
     {
@@ -248,7 +292,7 @@ const Patients = () => {
           onFinish={handleSave}
           size="middle"
           className="modal-form"
-          autoComplete="off"
+            autoComplete="new-password"
         >
           <div className="form-row">
             <Form.Item
@@ -256,8 +300,13 @@ const Patients = () => {
               name="name"
               rules={[{ required: true, message: "Required" }]}
               style={{ flex: 1 }}
+              autoComplete="off"
             >
-              <Input placeholder="Patient full name" />
+              <Input 
+                ref={nameInputRef}
+                placeholder="Patient full name" 
+                onKeyDown={(e) => handleKeyDown(e, ageInputRef)}
+              />
             </Form.Item>
             <Form.Item
               label="Age"
@@ -265,7 +314,14 @@ const Patients = () => {
               rules={[{ required: true, message: "Required" }]}
               style={{ width: 100 }}
             >
-              <Input type="number" min={0} max={130} placeholder="Age" />
+              <Input 
+                ref={ageInputRef}
+                type="number" 
+                min={0} 
+                max={130} 
+                placeholder="Age"
+                onKeyDown={(e) => handleKeyDown(e, genderSelectRef)}
+              />
             </Form.Item>
           </div>
 
@@ -276,32 +332,107 @@ const Patients = () => {
               rules={[{ required: true, message: "Required" }]}
               style={{ flex: 1 }}
             >
-              <Select placeholder="Select gender">
+              <Select
+                ref={genderSelectRef}
+                placeholder="Select gender"
+                onKeyDown={(e) => handleKeyDown(e, phoneInputRef)}
+              >
                 <Option value="Male">Male</Option>
                 <Option value="Female">Female</Option>
                 <Option value="Other">Other</Option>
               </Select>
             </Form.Item>
-            <Form.Item label="Phone" name="phone" style={{ flex: 1 }}>
-              <Input placeholder="+91 234 567 8900" />
+            <Form.Item 
+              label="Phone" 
+              name="phone" 
+              maxLength={10}
+              style={{ flex: 1 }}
+              rules={[
+                { 
+                  pattern: /^[0-9]+$/, 
+                  message: "Please enter only numbers" 
+                },
+                { 
+                  min: 10, 
+                  message: "Phone number must be at least 10 digits" 
+                }
+              ]}
+            >
+             <Input
+  ref={phoneInputRef}
+  placeholder="Enter 10 digit mobile number"
+  maxLength={10}
+  onChange={(e) => {
+    let value = e.target.value.replace(/\D/g, "");
+
+    // If first digit exists and is not 7,8,9 — remove it
+    if (value.length === 1 && !/[789]/.test(value)) {
+      value = "";
+    }
+
+    form.setFieldsValue({ phone: value });
+  }}
+  onKeyDown={(e) => handleKeyDown(e, emailInputRef)}
+/>
+
             </Form.Item>
           </div>
 
           <Form.Item
-            label="Email"
-            name="email"
-            rules={[{ type: "email", message: "Enter valid email" }]}
-          >
-            <Input placeholder="patient@example.com" />
-          </Form.Item>
+  label="Email"
+  name="email"
+  rules={[
+    { required: true, message: "Email is required" },
+    {
+      validator: (_, value) => {
+        if (!value || value.includes("@")) {
+          return Promise.resolve();
+        }
+        return Promise.reject(new Error("Email must contain @ symbol"));
+      },
+    },
+  ]}
+>
+  <Input
+    ref={emailInputRef}
+    placeholder="patient@example.com"
+    onKeyDown={(e) => handleKeyDown(e, medicalHistoryRef)}
+  />
+</Form.Item>
+
 
           <Form.Item label="Medical History" name="medicalHistory">
-            <TextArea rows={3} placeholder="Known conditions, allergies, medications..." />
+            <TextArea 
+              ref={medicalHistoryRef}
+              rows={3} 
+              placeholder="Known conditions, allergies, medications..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (submitButtonRef.current) {
+                    submitButtonRef.current.focus();
+                  }
+                }
+              }}
+            />
           </Form.Item>
 
           <div className="form-actions">
-            <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={saving}>
+            <Button onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              ref={submitButtonRef}
+              type="primary" 
+              htmlType="submit" 
+              loading={saving}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  // Let the form handle submission naturally
+                  return;
+                }
+              }}
+            >
               {editing ? "Update Patient" : "Add Patient"}
             </Button>
           </div>

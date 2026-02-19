@@ -1,7 +1,7 @@
 // src/components/Templates/Templates.jsx
 // CRUD for message templates stored in Firestore "templates" collection
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   collection,
   addDoc,
@@ -44,6 +44,12 @@ const Templates = () => {
   const [search, setSearch] = useState("");
   const [form] = Form.useForm();
 
+  // Refs for keyboard navigation
+  const titleInputRef = useRef(null);
+  const subjectInputRef = useRef(null);
+  const messageTextAreaRef = useRef(null);
+  const submitButtonRef = useRef(null);
+
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "templates"), (snap) => {
       setTemplates(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -56,12 +62,26 @@ const Templates = () => {
     setEditing(null);
     form.resetFields();
     setModalOpen(true);
+    
+    // Focus on first field after modal opens
+    setTimeout(() => {
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+      }
+    }, 100);
   };
 
   const openEdit = (tmpl) => {
     setEditing(tmpl);
     form.setFieldsValue(tmpl);
     setModalOpen(true);
+    
+    // Focus on first field after modal opens
+    setTimeout(() => {
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+      }
+    }, 100);
   };
 
   const handleSave = async (values) => {
@@ -95,6 +115,20 @@ const Templates = () => {
       notification.success({ message: "Template deleted" });
     } catch (err) {
       notification.error({ message: "Delete failed" });
+    }
+  };
+
+  // Keyboard navigation handler
+  const handleKeyDown = (e, nextRef) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (nextRef && nextRef.current) {
+        if (nextRef.current.focus) {
+          nextRef.current.focus();
+        } else if (nextRef.current.querySelector('input, textarea')) {
+          nextRef.current.querySelector('input, textarea').focus();
+        }
+      }
     }
   };
 
@@ -199,37 +233,76 @@ const Templates = () => {
         width={560}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={handleSave} className="modal-form" autoComplete="off">
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSave}
+          autoComplete="off"
+        >
+          {/* Template Title */}
           <Form.Item
             label="Template Title"
             name="title"
             rules={[{ required: true, message: "Required" }]}
           >
-            <Input placeholder="e.g. Appointment Reminder" />
+            <Input
+              ref={titleInputRef}
+              placeholder="e.g. Appointment Reminder"
+              onKeyDown={(e) => handleKeyDown(e, subjectInputRef)}
+            />
           </Form.Item>
 
+          {/* Subject */}
           <Form.Item
             label="Subject"
             name="subject"
             rules={[{ required: true, message: "Required" }]}
           >
-            <Input placeholder="Email or notification subject line" />
+            <Input
+              ref={subjectInputRef}
+              placeholder="Email or notification subject line"
+              onKeyDown={(e) => handleKeyDown(e, messageTextAreaRef)}
+            />
           </Form.Item>
 
+          {/* Message */}
           <Form.Item
             label="Message Body"
             name="message"
             rules={[{ required: true, message: "Required" }]}
           >
             <TextArea
+              ref={messageTextAreaRef}
               rows={5}
-              placeholder="Write your message here. Use {name} as placeholder for patient name."
+              placeholder="Write your message here."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  // Regular Enter - submit the form
+                  e.preventDefault();
+                  form.submit();
+                } else if (e.key === 'Enter' && e.shiftKey) {
+                  // Shift+Enter - allow new line (default behavior)
+                  // Don't prevent default, let it create a new line
+                  return;
+                } else if (e.key === 'Enter' && e.ctrlKey) {
+                  // Ctrl+Enter - also submit (optional)
+                  e.preventDefault();
+                  form.submit();
+                }
+              }}
             />
           </Form.Item>
 
           <div className="form-actions">
-            <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={saving}>
+            <Button onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              ref={submitButtonRef}
+              type="primary" 
+              htmlType="submit" 
+              loading={saving}
+            >
               {editing ? "Update Template" : "Create Template"}
             </Button>
           </div>

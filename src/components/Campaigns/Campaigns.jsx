@@ -1,7 +1,7 @@
 // src/components/Campaigns/Campaigns.jsx
 // Campaign management: select template + target patients via searchable checkbox modal
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo ,useRef} from "react";
 import {
   collection,
   addDoc,
@@ -94,7 +94,6 @@ const PatientPickerModal = ({ open, onClose, patients, selected, onConfirm }) =>
     onConfirm(checked);
     onClose();
   };
-
   return (
     <Modal
       title={
@@ -285,6 +284,13 @@ const Campaigns = () => {
   const [audienceError, setAudienceError] = useState(false);
   const [search, setSearch] = useState("");
   const [form] = Form.useForm();
+
+  const templateRef = useRef(null);
+  const audienceBtnRef = useRef(null);
+  const statusRef = useRef(null);
+
+  // your states here...
+
 
   useEffect(() => {
     const subs = [
@@ -511,95 +517,106 @@ const Campaigns = () => {
         destroyOnClose
       >
         <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          className="modal-form"
-          autoComplete="off"
-        >
-          <Form.Item
-            label="Campaign Name"
-            name="name"
-            rules={[{ required: true, message: "Please enter a campaign name" }]}
-          >
-            <Input placeholder="e.g. Summer Health Check Reminder" />
-          </Form.Item>
+  form={form}
+  layout="vertical"
+  onFinish={handleSave}
+  className="modal-form"
+  autoComplete="off"
+>
 
-          <Form.Item
-            label="Template"
-            name="templateId"
-            rules={[{ required: true, message: "Please select a template" }]}
-          >
-            <Select placeholder="Select a message template">
-              {templates.map((t) => (
-                <Option key={t.id} value={t.id}>
-                  {t.title}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
+  {/* Campaign Name */}
+  <Form.Item
+    label="Campaign Name"
+    name="name"
+    rules={[{ required: true, message: "Please enter a campaign name" }]}
+  >
+    <Input
+      placeholder="e.g. Summer Health Check Reminder"
+      onPressEnter={(e) => {
+        e.preventDefault();
+        templateRef.current?.focus();
+      }}
+    />
+  </Form.Item>
 
-          {/* Target Audience — triggers PatientPickerModal */}
-          <Form.Item
-            label="Target Audience"
-            required
-            validateStatus={audienceError ? "error" : ""}
-            help={audienceError ? "Please select at least one patient" : ""}
-          >
-            <Button
-              block
-              size="large"
-              icon={<TeamOutlined />}
-              onClick={() => {
-                setAudienceError(false);
-                setPickerOpen(true);
-              }}
-              style={{
-                textAlign: "left",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                height: 44,
-                borderColor: audienceError
-                  ? "#ff4d4f"
-                  : selectedPatientIds.length > 0
-                  ? "#1677ff"
-                  : "#d9d9d9",
-                color:
-                  selectedPatientIds.length > 0 ? "#1677ff" : "#bfbfbf",
-                fontWeight: selectedPatientIds.length > 0 ? 500 : 400,
-              }}
-            >
-              <span style={{ flex: 1 }}>
-                {audienceLabel || "Click to select patients..."}
-              </span>
-              {selectedPatientIds.length > 0 && (
-                <Badge
-                  count={
-                    selectedPatientIds.length === patients.length
-                      ? "All"
-                      : selectedPatientIds.length
-                  }
-                  style={{ backgroundColor: "#1677ff" }}
-                />
-              )}
-            </Button>
-          </Form.Item>
+  {/* Template */}
+  <Form.Item
+    label="Template"
+    name="templateId"
+    rules={[{ required: true, message: "Please select a template" }]}
+  >
+    <Select
+      ref={templateRef}
+      placeholder="Select a message template"
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          audienceBtnRef.current?.focus();
+        }
+      }}
+    >
+      {templates.map((t) => (
+        <Option key={t.id} value={t.id}>
+          {t.title}
+        </Option>
+      ))}
+    </Select>
+  </Form.Item>
 
-          <Form.Item label="Status" name="status">
-            <Select>
-              <Option value="Pending">Pending</Option>
-              <Option value="Sent">Sent</Option>
-            </Select>
-          </Form.Item>
+  {/* Target Audience */}
+  <Form.Item
+    label="Target Audience"
+    required
+    validateStatus={audienceError ? "error" : ""}
+    help={audienceError ? "Please select at least one patient" : ""}
+  >
+    <Button
+      ref={audienceBtnRef}
+      block
+      size="large"
+      icon={<TeamOutlined />}
+      onClick={() => {
+        setAudienceError(false);
+        setPickerOpen(true);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          statusRef.current?.focus();
+        }
+      }}
+    >
+      <span style={{ flex: 1 }}>
+        {audienceLabel || "Click to select patients..."}
+      </span>
+    </Button>
+  </Form.Item>
 
-          <div className="form-actions">
-            <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={saving}>
-              {editing ? "Update Campaign" : "Create Campaign"}
-            </Button>
-          </div>
-        </Form>
+  {/* Status */}
+  <Form.Item label="Status" name="status">
+    <Select
+      ref={statusRef}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          form.submit(); // 🔥 Final submit
+        }
+      }}
+    >
+      <Option value="Pending">Pending</Option>
+      <Option value="Sent">Sent</Option>
+    </Select>
+  </Form.Item>
+
+  <div className="form-actions">
+    <Button onClick={() => setModalOpen(false)}>Cancel</Button>
+    <Button type="primary" htmlType="submit" loading={saving}>
+      {editing ? "Update Campaign" : "Create Campaign"}
+    </Button>
+  </div>
+
+</Form>
+
       </Modal>
 
       {/* ── Patient Picker (nested modal) ── */}

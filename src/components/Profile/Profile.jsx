@@ -106,18 +106,34 @@ const Profile = () => {
                 />
               </Form.Item>
 
-              <Form.Item
-                label="Phone Number"
-                name="phone"
-                rules={[
-                  {
-                    pattern: /^[0-9+\-\s()]{7,15}$/,
-                    message: "Enter a valid phone number",
-                  },
-                ]}
-              >
-                <Input prefix={<PhoneOutlined />} placeholder="+1 234 567 8900" />
-              </Form.Item>
+<Form.Item
+  label="Phone Number"
+  name="phone"
+  rules={[
+    { required: true, message: "Phone number is required" },
+    {
+      pattern: /^[6789]\d{9}$/,
+      message: "Phone must start with 6, 7, 8, or 9 and be 10 digits",
+    },
+  ]}
+>
+  <Input
+    prefix={<PhoneOutlined />}
+    placeholder="9876543210"
+    maxLength={10}
+    onChange={(e) => {
+      let value = e.target.value.replace(/\D/g, ""); // remove non-digits
+
+      // If first digit exists and not 6/7/8/9 → remove it
+      if (value.length === 1 && !/[6789]/.test(value)) {
+        value = "";
+      }
+
+      form.setFieldsValue({ phone: value });
+    }}
+  />
+</Form.Item>
+
 
               <Form.Item label="Specialty / Role" name="specialty">
                 <Input placeholder="e.g. General Practitioner" />
